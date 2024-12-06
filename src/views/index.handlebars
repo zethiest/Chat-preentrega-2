@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="login">
+    <h1>Bienvenido al Chat</h1>
+    <input type="text" id="username" placeholder="Ingresa tu nombre" />
+    <button onclick="setUsername()">Entrar</button>
+  </div>
+
+  <div id="chat" style="display: none;">
+    <h2>Bienvenido, <span id="user"></span></h2>
+    <div id="messages"></div>
+    <input type="text" id="chatBox" placeholder="Escribe un mensaje" />
+    <button onclick="sendMessage()">Enviar</button>
+  </div>
+
+  <script>
+    const socket = io();
+    let username = "";
+
+    // Función para establecer el nombre de usuario
+    function setUsername() {
+      username = document.getElementById("username").value.trim();
+      if (username) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "block";
+        document.getElementById("user").textContent = username;
+        socket.emit("newUser", username);  // Enviar el nombre al servidor
+      }
+    }
+
+    // Función para enviar un mensaje
+    function sendMessage() {
+      const message = document.getElementById("chatBox").value.trim();
+      if (message) {
+        socket.emit("message", { username, message });  // Enviar mensaje con el nombre
+        document.getElementById("chatBox").value = "";  // Limpiar el input
+      }
+    }
+
+    // Agregar un event listener para enviar el mensaje al presionar "Enter"
+    document.getElementById("chatBox").addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {  // Verificar si la tecla presionada es "Enter"
+        sendMessage();  // Llamar la función de enviar mensaje
+        event.preventDefault();  // Evitar que la tecla Enter agregue un salto de línea
+      }
+    });
+
+    // Escuchar los mensajes del servidor
+    socket.on("messageLogs", (messages) => {
+      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML = "";
+      messages.forEach((msg) => {
+        const msgElement = document.createElement("p");
+        msgElement.textContent = `${msg.username}: ${msg.message}`;
+        messagesDiv.appendChild(msgElement);
+      });
+    });
+  </script>
+</body>
+</html>
